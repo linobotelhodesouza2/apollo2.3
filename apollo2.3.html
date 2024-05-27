@@ -165,7 +165,7 @@
         return `<tr>
                   <td>${comment.text}</td>
                   <td>${comment.date}</td>
-                  <td><button class="btn btn-sm btn-danger" onclick="removeComment(${index})">Excluir</button></td>
+                  <td><button class="btn btn-sm btn-danger" onclick="removeComment('${selectedProduct.name}', ${selectedProduct.perimeter}, ${index})">Excluir</button></td>
                 </tr>`;
       }).join("");
 
@@ -190,16 +190,10 @@
       `;
     }
 
-    function removeComment(commentIndex) {
-      var selectedProduct = JSON.parse(document.getElementById("productSelect").value);
-      if (!selectedProduct) {
-        alert("Nenhum produto selecionado.");
-        return;
-      }
-
+    function removeComment(productName, productPerimeter, commentIndex) {
       var products = JSON.parse(localStorage.getItem("products")) || [];
       var productIndex = products.findIndex(function(product) {
-        return product.name === selectedProduct.name && product.perimeter === selectedProduct.perimeter;
+        return product.name === productName && product.perimeter === productPerimeter;
       });
 
       if (productIndex !== -1) {
