@@ -32,17 +32,17 @@
   <div class="overlay"></div>
 
   <div class="container">
-    <h2>APOLLO - LINO</h2>
+    <h2>APOLLO 2.3</h2>
     <div class="form-group">
       <label for="productName">Nome do Produto:</label>
       <input type="text" class="form-control" id="productName" maxlength="30">
     </div>
     <div class="form-group">
-      <label for="productPerimeter">Perímetro:</label>
+      <label for="productPerimeter">Perímetro do Produto:</label>
       <input type="number" class="form-control" id="productPerimeter" step="any">
     </div>
     <div class="form-group">
-      <label for="productCut">Corte:</label>
+      <label for="productCut">Corte do Perímetro:</label>
       <input type="number" class="form-control" id="productCut" step="any">
     </div>
     <div class="form-group">
@@ -60,12 +60,6 @@
         <option value="">Selecione um produto</option>
       </select>
     </div>
-    <div class="form-group">
-      <label for="perimeterSelect">Selecionar Perímetro:</label>
-      <select class="form-control" id="perimeterSelect" onchange="showSelectedPerimeter()">
-        <option value="">Selecione um perímetro</option>
-      </select>
-    </div>
     <button type="button" class="btn btn-danger" onclick="removeSelectedProduct()">Remover</button>
   </div>
 
@@ -76,7 +70,6 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       loadProducts();
-      loadPerimeters();
     });
 
     function saveProduct() {
@@ -125,7 +118,6 @@
 
       localStorage.setItem("products", JSON.stringify(products));
       loadProducts();
-      loadPerimeters();
 
       document.getElementById("productName").value = "";
       document.getElementById("productPerimeter").value = "";
@@ -156,21 +148,6 @@
         var option = document.createElement("option");
         option.value = JSON.stringify(product);
         option.textContent = product.name;
-        select.appendChild(option);
-      });
-    }
-
-    function loadPerimeters() {
-      var products = JSON.parse(localStorage.getItem("products")) || [];
-      var perimeters = [...new Set(products.map(product => product.perimeter))].sort((a, b) => a - b);
-
-      var select = document.getElementById("perimeterSelect");
-      select.innerHTML = '<option value="">Selecione um perímetro</option>';
-
-      perimeters.forEach(function(perimeter) {
-        var option = document.createElement("option");
-        option.value = perimeter;
-        option.textContent = perimeter;
         select.appendChild(option);
       });
     }
@@ -213,50 +190,6 @@
       `;
     }
 
-    function showSelectedPerimeter() {
-      var selectedPerimeter = parseFloat(document.getElementById("perimeterSelect").value);
-      var products = JSON.parse(localStorage.getItem("products")) || [];
-      var matchingProducts = products.filter(product => product.perimeter === selectedPerimeter);
-      var detailsContainer = document.getElementById("selectedProductDetails");
-
-      if (!selectedPerimeter || matchingProducts.length === 0) {
-        detailsContainer.innerHTML = "";
-        return;
-      }
-
-      var productDetails = matchingProducts.map(function(product) {
-        var commentsHtml = product.comments.map(function(comment, index) {
-          return `<tr>
-                    <td>${comment.text}</td>
-                    <td>${comment.date}</td>
-                    <td><button class="btn btn-sm btn-danger" onclick="removeComment('${product.name}', ${product.perimeter}, ${index})">Excluir</button></td>
-                  </tr>`;
-        }).join("");
-
-        return `
-          <h4>Dados do Produto</h4>
-          <p><strong>Nome:</strong> ${product.name}</p>
-          <p><strong>Perímetro:</strong> ${product.perimeter}</p>
-          <p><strong>Corte do Perímetro:</strong> ${product.cut}</p>
-          <h5>Comentários:</h5>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Comentário</th>
-                <th>Data</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${commentsHtml}
-            </tbody>
-          </table>
-        `;
-      }).join("<hr>");
-
-      detailsContainer.innerHTML = productDetails;
-    }
-
     function removeComment(productName, productPerimeter, commentIndex) {
       var products = JSON.parse(localStorage.getItem("products")) || [];
       var productIndex = products.findIndex(function(product) {
@@ -267,7 +200,7 @@
         products[productIndex].comments.splice(commentIndex, 1);
         localStorage.setItem("products", JSON.stringify(products));
         showSelectedProduct();
-        showSelectedPerimeter();
+        alert("Comentário removido com sucesso!");
       }
     }
 
@@ -285,7 +218,6 @@
 
       localStorage.setItem("products", JSON.stringify(updatedProducts));
       loadProducts();
-      loadPerimeters();
       document.getElementById("selectedProductDetails").innerHTML = "";
       alert("Produto removido com sucesso!");
     }
