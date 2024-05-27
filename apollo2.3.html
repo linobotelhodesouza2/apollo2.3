@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicação de Produtos</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background: url('https://via.placeholder.com/1920x1080') no-repeat center center fixed;
+      background-size: cover;
+      position: relative;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8); /* Opacidade de 80% */
+    }
+
+    .container {
+      margin-top: 20px;
+      position: relative;
+      z-index: 1; /* Garante que o conteúdo da página fique na frente do fundo abstrato */
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <div class="container">
+    <h2>Cadastro de Produtos</h2>
+    <div class="form-group">
+      <label for="productName">Nome do Produto (até 30 caracteres):</label>
+      <input type="text" class="form-control" id="productName" maxlength="30">
+    </div>
+    <div class="form-group">
+      <label for="productPerimeter">Perímetro do Produto:</label>
+      <input type="number" class="form-control" id="productPerimeter" step="any">
+    </div>
+    <div class="form-group">
+      <label for="productCut">Corte do Perímetro:</label>
+      <input type="number" class="form-control" id="productCut" step="any">
+    </div>
+    <div class="form-group">
+      <label for="productComments">Comentários (até 200 caracteres):</label>
+      <input type="text" class="form-control" id="productComments" maxlength="200">
+    </div>
+    <button type="button" class="btn btn-primary" onclick="saveProduct()">Salvar</button>
+  </div>
+
+  <div class="container mt-5">
+    <h2>Histórico de Perímetros</h2>
+    <div class="form-group">
+      <label for="productSelect">Selecionar Produto:</label>
+      <select class="form-control" id="productSelect" onchange="showSelectedProduct()">
+        <option value="">Selecione um produto</option>
+      </select>
+    </div>
+    <button type="button" class="btn btn-danger" onclick="removeSelectedProduct()">Remover</button>
+  </div>
+
+  <div class="container mt-3">
+    <div id="selectedProductDetails"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      loadProducts();
+    });
+
+    function saveProduct() {
+      var productName = document.getElementById("productName").value.trim().toUpperCase();
+      var productPerimeter = document.getElementById("productPerimeter").value.trim();
+      var productCut = document.getElementById("productCut").value.trim();
+      var productComments = document.getElementById("productComments").value.trim();
+      var currentDate = new Date();
+      var formattedDate = currentDate.toLocaleDateString('pt-BR') + ' ' + currentDate.toLocaleTimeString('pt-BR');
+
+      if (productName === "") {
+        alert("Por favor, insira o nome do produto.");
+        return;
+      }
+
+      if (isNaN(productPerimeter)) {
+        alert("O perímetro do produto deve ser um número.");
+        return;
+      }
+
+      if (isNaN(productCut)) {
+        alert("O corte do perímetro deve ser um número.");
+        return;
+      }
+
+      var products = JSON.parse(localStorage.getItem("products")) || [];
+      var existingProductIndex = products.findIndex(function(product) {
+        return product.name === productName && product.perimeter === parseFloat(productPerimeter);
+      });
+
+      if (existingProductIndex !== -1) {
+        products[existingProductIndex].cut = parseFloat(productCut);
+        if (!products[existingProductIndex].comments) {
+          products[existingProductIndex].comments = [];
+        }
+        products[existingProductIndex].comments.push({ text: productComments, date: formattedDate });
+      } else {
+        products.push({
+          name: productName,
+          perimeter: parseFloat(productPerimeter),
+          cut: parseFloat(productCut),
+          comments: [{ text: productComments, date: formattedDate }],
+          created_at: new Date()
+        });
+      }
+
+      localStorage.setItem("products", JSON.stringify(products));
+      loadProducts();
+
+      document.getElementById("productName").value = "";
+      document.getElementById("productPerimeter").value = "";
+      document.getElementById("productCut").value = "";
+      document.getElementById("productComments").value = "";
+
+      alert("Produto salvo com sucesso!");
+    }
+
+    function loadProducts() {
+      var products = JSON.parse(localStorage.getItem("products")) || [];
+      products.sort(function(a, b) {
+        var nameA = a.name.toUpperCase();
+        var nameB = b.name.toUpperCase();
+        if (nameA < nameB) {
+          return -1;
+        }
+        if (nameA > nameB) {
+          return 1;
+        }
+        return 0;
+      });
+
+      var select = document.getElementById("productSelect");
+      select.innerHTML = '<option value="">Selecione um produto</option>';
+
+      products.forEach(function(product) {
+        var option = document.createElement("option");
+        option.value = JSON.stringify(product);
+        option.textContent = product.name;
+        select.appendChild(option);
+      });
+    }
+
+    function showSelectedProduct() {
+      var selectedProduct = JSON.parse(document.getElementById("productSelect").value);
+      var detailsContainer = document.getElementById("selectedProductDetails");
+
+      if (!selectedProduct) {
+        detailsContainer.innerHTML = "";
+        return;
+      }
+
+      var commentsHtml = selectedProduct.comments.map(function(comment, index) {
+        return `<tr>
+                  <td>${comment.text}</td>
+                  <td>${comment.date}</td>
+                  <td><button class="btn btn-sm btn-danger" onclick="removeComment(${index})">Excluir</button></td>
+                </tr>`;
+      }).join("");
+
+      detailsContainer.innerHTML = `
+        <h4>Dados do Produto Selecionado</h4>
+        <p><strong>Nome:</strong> ${selectedProduct.name}</p>
+        <p><strong>Perímetro:</strong> ${selectedProduct.perimeter}</p>
+        <p><strong>Corte do Perímetro:</strong> ${selectedProduct.cut}</p>
+        <h5>Comentários:</h5>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Comentário</th>
+              <th>Data</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${commentsHtml}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function removeComment(commentIndex) {
+      var selectedProduct = JSON.parse(document.getElementById("productSelect").value);
+      if (!selectedProduct) {
+        alert("Nenhum produto selecionado.");
+        return;
+      }
+
+      var products = JSON.parse(localStorage.getItem("products")) || [];
+      var productIndex = products.findIndex(function(product) {
+        return product.name === selectedProduct.name && product.perimeter === selectedProduct.perimeter;
+      });
+
+      if (productIndex !== -1) {
+        products[productIndex].comments.splice(commentIndex, 1);
+        localStorage.setItem("products", JSON.stringify(products));
+        showSelectedProduct();
+      }
+    }
+
+    function removeSelectedProduct() {
+      var selectedProduct = JSON.parse(document.getElementById("productSelect").value);
+      if (!selectedProduct) {
+        alert("Nenhum produto selecionado.");
+        return;
+      }
+
+      var products = JSON.parse(localStorage.getItem("products")) || [];
+      var updatedProducts = products.filter(function(product) {
+        return product.name !== selectedProduct.name || product.perimeter !== selectedProduct.perimeter;
+      });
+
+      localStorage.setItem("products", JSON.stringify(updatedProducts));
+      loadProducts();
+      document.getElementById("selectedProductDetails").innerHTML = "";
+      alert("Produto removido com sucesso!");
+    }
+  </script>
+</body>
+</html>
